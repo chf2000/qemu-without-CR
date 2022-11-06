@@ -217,9 +217,9 @@ int monitor_puts(Monitor *mon, const char *str)
     qemu_mutex_lock(&mon->mon_lock);
     for (i = 0; str[i]; i++) {
         c = str[i];
-        if (c == '\n') {
+        /* if (c == '\n') {
             g_string_append_c(mon->outbuf, '\r');
-        }
+        } */
         g_string_append_c(mon->outbuf, c);
         if (c == '\n') {
             monitor_flush_locked(mon);
