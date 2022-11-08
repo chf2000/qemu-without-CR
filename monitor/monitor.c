@@ -220,6 +220,11 @@ int monitor_puts(Monitor *mon, const char *str)
         /* if (c == '\n') {
             g_string_append_c(mon->outbuf, '\r');
         } */
+        if (c == '\r') {
+            if (str[i+1] == '\n') {
+                continue;
+            }
+        }
         g_string_append_c(mon->outbuf, c);
         if (c == '\n') {
             monitor_flush_locked(mon);
