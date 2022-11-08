@@ -41,6 +41,7 @@
 #include "qemu/yank.h"
 
 #include "chardev-internal.h"
+int print_str_n(const uint8_t* str, int str_len);
 
 /***********************************************************/
 /* character device */
@@ -158,11 +159,30 @@ static int qemu_chr_write_buffer(Chardev *s,
     return res;
 }
 
+int print_str_n(const uint8_t* str, int str_len)  
+{  
+    int i=0;  
+    for (; i <= str_len; ++i)  {
+        if (str[i] == 0) {
+            continue;
+        }
+        else if (str[i]=='\r') {
+            // printf("\n CR found!\n");
+            ((uint8_t*)str)[i] = '?';
+            continue;
+        }
+        // else {
+        //     putchar(str[i]);
+        // }
+    }
+    return i;  
+}
+
 int qemu_chr_write(Chardev *s, const uint8_t *buf, int len, bool write_all)
 {
     int offset = 0;
     int res;
-
+    print_str_n(buf, len);
     if (qemu_chr_replay(s) && replay_mode == REPLAY_MODE_PLAY) {
         replay_char_write_event_load(&res, &offset);
         assert(offset <= len);
