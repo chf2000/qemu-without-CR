@@ -53,7 +53,7 @@ static void fdt_add_rtc_node(LoongArchMachineState *lams)
     nodename = g_strdup_printf("/rtc@%" PRIx64, base);
     qemu_fdt_add_subnode(ms->fdt, nodename);
     qemu_fdt_setprop_string(ms->fdt, nodename, "compatible", "loongson,ls7a-rtc");
-    qemu_fdt_setprop_sized_cells(ms->fdt, nodename, "reg", 0x0, base, size);
+    qemu_fdt_setprop_sized_cells(ms->fdt, nodename, "reg", 2, base, 2, size);
     g_free(nodename);
 }
 
@@ -69,6 +69,7 @@ static void fdt_add_uart_node(LoongArchMachineState *lams)
     qemu_fdt_setprop_string(ms->fdt, nodename, "compatible", "ns16550a");
     qemu_fdt_setprop_cells(ms->fdt, nodename, "reg", 0x0, base, 0x0, size);
     qemu_fdt_setprop_cell(ms->fdt, nodename, "clock-frequency", 100000000);
+    qemu_fdt_setprop_string(ms->fdt, "/chosen", "stdout-path", nodename);
     g_free(nodename);
 }
 
@@ -87,6 +88,7 @@ static void create_fdt(LoongArchMachineState *lams)
                             "linux,dummy-loongson3");
     qemu_fdt_setprop_cell(ms->fdt, "/", "#address-cells", 0x2);
     qemu_fdt_setprop_cell(ms->fdt, "/", "#size-cells", 0x2);
+    qemu_fdt_add_subnode(ms->fdt, "/chosen");
 }
 
 static void fdt_add_cpu_nodes(const LoongArchMachineState *lams)
@@ -793,13 +795,13 @@ static void loongarch_init(MachineState *machine)
     qemu_add_machine_init_done_notifier(&lams->machine_done);
     fdt_add_pcie_node(lams);
     /*
-     * Since lowmem region starts from 0, FDT base address is located
-     * at 2 MiB to avoid NULL pointer access.
-     *
+     * Since lowmem region starts from 0 and Linux kernel legacy start address
+     * at 2 MiB, FDT base address is located at 1 MiB to avoid NULL pointer
+     * access. FDT size limit with 1 MiB.
      * Put the FDT into the memory map as a ROM image: this will ensure
      * the FDT is copied again upon reset, even if addr points into RAM.
      */
-    fdt_base = 2 * MiB;
+    fdt_base = 1 * MiB;
     qemu_fdt_dumpdtb(machine->fdt, lams->fdt_size);
     rom_add_blob_fixed("fdt", machine->fdt, lams->fdt_size, fdt_base);
 }

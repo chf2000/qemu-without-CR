@@ -354,7 +354,7 @@ static int s390_machine_protect(S390CcwMachineState *ms)
     }
 
     error_setg(&pv_mig_blocker,
-               "protected VMs are currently not migrateable.");
+               "protected VMs are currently not migratable.");
     rc = migrate_add_blocker(pv_mig_blocker, &local_err);
     if (rc) {
         ram_block_discard_disable(false);
@@ -449,7 +449,7 @@ static void s390_machine_reset(MachineState *machine, ShutdownCause reason)
         break;
     case S390_RESET_MODIFIED_CLEAR:
         /*
-         * Susbsystem reset needs to be done before we unshare memory
+         * Subsystem reset needs to be done before we unshare memory
          * and lose access to VIRTIO structures in guest memory.
          */
         subsystem_reset();
@@ -462,7 +462,7 @@ static void s390_machine_reset(MachineState *machine, ShutdownCause reason)
         break;
     case S390_RESET_LOAD_NORMAL:
         /*
-         * Susbsystem reset needs to be done before we unshare memory
+         * Subsystem reset needs to be done before we unshare memory
          * and lose access to VIRTIO structures in guest memory.
          */
         subsystem_reset();
@@ -627,21 +627,6 @@ static inline void machine_set_dea_key_wrap(Object *obj, bool value,
     ms->dea_key_wrap = value;
 }
 
-static inline bool machine_get_zpcii_disable(Object *obj, Error **errp)
-{
-    S390CcwMachineState *ms = S390_CCW_MACHINE(obj);
-
-    return ms->zpcii_disable;
-}
-
-static inline void machine_set_zpcii_disable(Object *obj, bool value,
-                                             Error **errp)
-{
-    S390CcwMachineState *ms = S390_CCW_MACHINE(obj);
-
-    ms->zpcii_disable = value;
-}
-
 static S390CcwMachineClass *current_mc;
 
 /*
@@ -778,12 +763,6 @@ static void ccw_machine_class_init(ObjectClass *oc, void *data)
             "Up to 8 chars in set of [A-Za-z0-9. ] (lower case chars converted"
             " to upper case) to pass to machine loader, boot manager,"
             " and guest kernel");
-
-    object_class_property_add_bool(oc, "zpcii-disable",
-                                   machine_get_zpcii_disable,
-                                   machine_set_zpcii_disable);
-    object_class_property_set_description(oc, "zpcii-disable",
-            "disable zPCI interpretation facilties");
 }
 
 static inline void s390_machine_initfn(Object *obj)
@@ -792,7 +771,6 @@ static inline void s390_machine_initfn(Object *obj)
 
     ms->aes_key_wrap = true;
     ms->dea_key_wrap = true;
-    ms->zpcii_disable = false;
 }
 
 static const TypeInfo ccw_machine_info = {
@@ -857,20 +835,23 @@ DEFINE_CCW_MACHINE(7_2, "7.2", true);
 static void ccw_machine_7_1_instance_options(MachineState *machine)
 {
     static const S390FeatInit qemu_cpu_feat = { S390_FEAT_LIST_QEMU_V7_1 };
-    S390CcwMachineState *ms = S390_CCW_MACHINE(machine);
 
     ccw_machine_7_2_instance_options(machine);
     s390_cpudef_featoff_greater(16, 1, S390_FEAT_PAIE);
     s390_set_qemu_cpu_model(0x8561, 15, 1, qemu_cpu_feat);
-    ms->zpcii_disable = true;
 }
 
 static void ccw_machine_7_1_class_options(MachineClass *mc)
 {
     S390CcwMachineClass *s390mc = S390_CCW_MACHINE_CLASS(mc);
+    static GlobalProperty compat[] = {
+        { TYPE_S390_PCI_DEVICE, "interpret", "off", },
+        { TYPE_S390_PCI_DEVICE, "forwarding-assist", "off", },
+    };
 
     ccw_machine_7_2_class_options(mc);
     compat_props_add(mc->compat_props, hw_compat_7_1, hw_compat_7_1_len);
+    compat_props_add(mc->compat_props, compat, G_N_ELEMENTS(compat));
     s390mc->max_threads = S390_MAX_CPUS;
 }
 DEFINE_CCW_MACHINE(7_1, "7.1", false);
